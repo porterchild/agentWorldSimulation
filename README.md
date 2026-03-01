@@ -1,0 +1,37 @@
+# Agent World Simulation
+
+A world simulator where LLMs don't just narrate — they *inhabit*.
+
+## The Core Idea
+
+Given a scenario, rather than asking a single model to simulate a complex world, we distribute the simulation across many agents — each one living inside a single entity, thinking and acting in the first person.
+
+The world emerges from the bottom up.
+
+## Entities Are Recursive
+
+An entity can be anything: a corporation, a person, a department, a market dynamic. When an entity is too complex to simulate faithfully as a single agent, it spawns sub-entities. Microsoft becomes Satya, Legal, Procurement, Research. Each sub-entity simulates its own perspective. Their outputs are coherentized into a single Microsoft voice before touching the world.
+
+This hierarchy is unbounded in principle, budget-constrained in practice.
+
+## Two Kinds of Output
+
+Every entity has private thoughts and public actions. Private thoughts stay inside the entity (and its sub-tree). Only actions surface upward — to the parent entity, and eventually to the world. This preserves information asymmetry: OpenAI doesn't know what Satya is thinking.
+
+## The World Thread
+
+All top-level entity actions feed into a world synthesizer, which produces a single coherent narrative — the world thread. This thread is broadcast back to all entities as the shared observable reality they react to next.
+
+The world thread is not a summary. It's the ground truth of what happened.
+
+## Turns
+
+The simulation advances in discrete turns. Each turn, entities observe the world, think, and act. The world synthesizer closes the loop. Simulated time is implicit — the synthesizer can advance the clock by an hour or a week depending on what's happening.
+
+Synchronous by design. The world waits for everyone before moving forward.
+
+## Why This Works
+
+Complex systems are hard to simulate centrally because no single perspective can hold all the relevant context without losing fidelity. By giving each entity its own context, memory, and point of view, the simulation can be both wide (many actors) and deep (each actor is genuinely reasoning from its own position).
+
+The emergent narrative isn't written — it's negotiated, turn by turn, between agents who don't fully know what the others are doing.
