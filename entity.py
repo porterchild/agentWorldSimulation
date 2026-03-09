@@ -90,7 +90,7 @@ class Entity:
 
     def _coherentize(self, world_thread: str, turn: int) -> str:
         # Children act in parallel — their outputs are independent
-        child_actions = [None] * len(self.children)
+        child_actions = [""] * len(self.children)
         with ThreadPoolExecutor(max_workers=len(self.children)) as executor:
             futures = {
                 executor.submit(child.act, world_thread, turn): i

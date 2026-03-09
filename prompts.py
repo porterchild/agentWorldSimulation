@@ -94,14 +94,14 @@ def entity_act(
                 f"{_thinking(thinking)}"
                 f"You are {entity_name}. {entity_desc} "
                 "Respond in the first person. "
-                "Describe your assessment of the situation and the actions or decisions "
-                "you are taking. "
+                "After thoughfully considering the situation, describe your assessment of the situation and the actions or decisions "
+                "you are taking. Be conceptual, don't pollute your actions with made-up details."
                 "Your output is your public action in the world; internal deliberation stays private."
             ),
         },
         {
             "role": "user",
-            "content": f"{world_text}{history_text}\n\nWhat are you doing and deciding right now?",
+            "content": f"{world_text}{history_text}\n\nWhat are your actions, if any?",
         },
     ]
 
@@ -109,7 +109,7 @@ def entity_act(
 def entity_coherentize(
     entity_name: str,
     entity_desc: str,
-    sub_actions: list[tuple[str, str]],
+    sub_actions: list,
     world_thread: str,
     thinking: bool = False,
 ) -> list[dict]:
@@ -141,7 +141,7 @@ WORLD_THREAD_CONTEXT_CHARS = 2000  # how much of prior world thread to pass as c
 
 
 def world_synthesize(
-    entity_actions: list[tuple[str, str]],
+    entity_actions: list,
     world_thread: str,
     turn_num: int,
     thinking: bool = False,

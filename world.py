@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import llm
 import prompts
 import config
+from collections import deque
 from entity import Entity, _parse_json_array
 
 
@@ -21,6 +22,11 @@ class World:
         response = llm.complete(messages, label="init:scenario_to_entities")
         top_level = _parse_json_array(response)
 
+        print("Top-level entities identified:")
+        for item in top_level:
+            print(f"  {item.get('name', '?')} ({item.get('description', '')[:80]}...)")
+        print()
+
         if not top_level:
             raise ValueError(f"Could not parse entities from response:\n{response}")
 
@@ -35,14 +41,44 @@ class World:
             if not name:
                 continue
             entity = Entity(name=name, description=desc)
-            entity.spawn_children(self.scenario, budget)
             self.entities.append(entity)
+
+        self._spawn_bfs(budget)
 
         print("\nEntity tree:")
         for entity in self.entities:
+            print(f"\n--- {entity.name} ---\n")
             for line in entity.tree_lines():
                 print(line)
         print()
+
+    def _spawn_bfs(self, budget: list[int]) -> None:
+        queue = deque(self.entities)
+        while queue and budget[0] > 0:
+            entity = queue.popleft()
+            indent = "  " * entity.depth()
+            print(f"{indent}  Deciding sub-entities for {entity.name}...", flush=True)
+
+            messages = prompts.entity_spawn_decision(
+                entity.name, entity.description, self.scenario, budget[0], thinking=config.THINKING
+            )
+            response = llm.complete(messages, label=f"spawn:{entity._path()}")
+            sub_entities = _parse_json_array(response)
+
+            for item in sub_entities:
+                if budget[0] <= 0:
+                    break
+                name = item.get("name", "").strip()
+                desc = item.get("description", "").strip()
+                if not name:
+                    continue
+                budget[0] -= 1
+                child = Entity(name=name, description=desc, parent=entity)
+                entity.children.append(child)
+                queue.append(child)
+
+        if budget[0] <= 0:
+            print(f"Spawn budget exhausted (used {self.spawn_budget - budget[0]} of {self.spawn_budget}). Skipping remaining entities.")
 
     def step(self) -> str:
         self.turn += 1
@@ -51,7 +87,7 @@ class World:
         print(f"{'='*60}\n")
 
         # Top-level entities act in parallel — each reads the same world thread independently
-        entity_actions = [None] * len(self.entities)
+        entity_actions = [("", "")] * len(self.entities)
         with ThreadPoolExecutor(max_workers=len(self.entities)) as executor:
             futures = {
                 executor.submit(e.act, self.world_thread, self.turn): i

@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import openai
+from typing import Any, Dict, List, Optional
 import config
 
 _client = None
@@ -31,7 +32,7 @@ def set_full_log(path: Path) -> None:
     _full_log_file = open(path, "w", buffering=1)
 
 
-def _log_call(label: str, messages: list[dict], raw_response: str, stripped_response: str) -> None:
+def _log_call(label: str, messages, raw_response: str, stripped_response: str) -> None:
     global _call_counter
     if _full_log_file is None:
         return
@@ -87,25 +88,29 @@ def _strip_think_tags(text: str) -> str:
     return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
 
-def complete(messages: list[dict], max_tokens: int = 1500, label: str = "") -> str:
+def complete(messages, max_tokens: Optional[int] = None, label: str = "") -> str:
     response = get_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         max_tokens=max_tokens,
+        extra_body={"reasoning": {"enabled": True}},
     )
-    raw = response.choices[0].message.content
+    if response and response.choices and response.choices[0] and response.choices[0].message:
+        raw = response.choices[0].message.content or ""
+    else:
+        raw = ""
     stripped = _strip_think_tags(raw)
     _log_call(label, messages, raw, stripped)
     return stripped
 
 
-def complete_many(tasks: list[tuple], max_tokens: int = 1500) -> list[str]:
+def complete_many(tasks, max_tokens: Optional[int] = None) -> list[str]:
     """
     Run multiple complete() calls in parallel.
     tasks: list of (messages, label) tuples — one per call.
     Returns results in the same order as tasks.
     """
-    results = [None] * len(tasks)
+    results = [""] * len(tasks)
     with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
         futures = {
             executor.submit(complete, messages, max_tokens, label): i
