@@ -94,14 +94,14 @@ def entity_act(
                 f"{_thinking(thinking)}"
                 f"You are {entity_name}. {entity_desc} "
                 "Respond in the first person. "
-                "After thoughfully considering the situation, describe your assessment of the situation and the actions or decisions "
-                "you are taking. Be conceptual, don't pollute your actions with made-up details."
+                "Describe your assessment of the situation and the actions or decisions "
+                "you are taking. "
                 "Your output is your public action in the world; internal deliberation stays private."
             ),
         },
         {
             "role": "user",
-            "content": f"{world_text}{history_text}\n\nWhat are your actions, if any?",
+            "content": f"{world_text}{history_text}\n\nWhat are you doing and deciding right now?",
         },
     ]
 
@@ -137,11 +137,8 @@ def entity_coherentize(
     ]
 
 
-WORLD_THREAD_CONTEXT_CHARS = 2000  # how much of prior world thread to pass as context
-
-
 def world_synthesize(
-    entity_actions: list,
+    entity_actions: list[tuple[str, str]],
     world_thread: str,
     turn_num: int,
     thinking: bool = False,
@@ -149,9 +146,7 @@ def world_synthesize(
     """Return messages asking the world synthesizer to produce an updated world thread."""
     actions_text = "\n\n".join(f"[{name}]\n{action}" for name, action in entity_actions)
 
-    # Truncate prior thread to avoid context blowup over long runs
-    truncated = world_thread[-WORLD_THREAD_CONTEXT_CHARS:] if world_thread else ""
-    prior_text = f"Prior world state:\n{truncated}\n\n" if truncated else ""
+    prior_text = f"Prior world state:\n{world_thread}\n\n" if world_thread else ""
 
     return [
         {
